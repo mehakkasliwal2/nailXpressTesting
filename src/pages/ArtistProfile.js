@@ -12,7 +12,7 @@ const ArtistProfile = () => {
   const { currentUser, userProfile } = useAuth();
   const [artist, setArtist] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState(null);
+  // Removed unused selectedImage state
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [showGallery, setShowGallery] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -21,6 +21,16 @@ const ArtistProfile = () => {
     fetchArtist();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Set page title dynamically
+  useEffect(() => {
+    if (artist) {
+      document.title = `${artist.displayName || artist.name} | nailXpress`;
+    }
+    return () => {
+      document.title = 'nailXpress';
+    };
+  }, [artist]);
 
   // Check if artist is favorited
   useEffect(() => {
@@ -53,17 +63,25 @@ const ArtistProfile = () => {
   };
 
   const handleShare = async () => {
-    const shareUrl = `@https://nailxpress.net/artists/${artist.username || artist.displayName || artist.name}`;
+    const shareUrl = `https://nailxpress.net/artist/${artist.id}`;
+    const shareText = `Check out ${artist.displayName || artist.name}'s nail art portfolio on nailXpress!`;
+    
     try {
       await navigator.share({
-        title: `nailXpress`,
-        text: `Check out ${artist.displayName || artist.name}'s nail art portfolio on nailXpress`,
+        title: `${artist.displayName || artist.name} | nailXpress`,
+        text: shareText,
         url: shareUrl
       });
     } catch (error) {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(shareUrl);
-      toast.success('Link copied to clipboard');
+      // Fallback: copy to clipboard with text
+      try {
+        const fullText = `${shareText}\n\n${shareUrl}`;
+        await navigator.clipboard.writeText(fullText);
+        toast.success('Link and text copied to clipboard');
+      } catch (clipboardError) {
+        // If clipboard fails, just show the URL
+        toast.success(`Link: ${shareUrl}`);
+      }
     }
   };
 
@@ -92,33 +110,58 @@ const ArtistProfile = () => {
     setShowGallery(true);
   };
 
-  const closeGallery = () => {
+  const closeGallery = React.useCallback(() => {
     setShowGallery(false);
-  };
+  }, []);
 
-  const nextImage = () => {
-    if (artist.portfolio) {
+  const nextImage = React.useCallback(() => {
+    if (artist && artist.portfolio) {
       setGalleryIndex((prev) => (prev + 1) % artist.portfolio.length);
     }
-  };
+  }, [artist]);
 
-  const prevImage = () => {
-    if (artist.portfolio) {
+  const prevImage = React.useCallback(() => {
+    if (artist && artist.portfolio) {
       setGalleryIndex((prev) => (prev - 1 + artist.portfolio.length) % artist.portfolio.length);
     }
-  };
+  }, [artist]);
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = React.useCallback((e) => {
     if (showGallery) {
       if (e.key === 'Escape') closeGallery();
       if (e.key === 'ArrowLeft') prevImage();
       if (e.key === 'ArrowRight') nextImage();
     }
-  };
+  }, [showGallery, closeGallery, prevImage, nextImage]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  // Prevent body scroll when gallery is open on mobile
+  useEffect(() => {
+    if (showGallery) {
+      // Prevent scrolling on the body
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+    } else {
+      // Restore scrolling
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    };
   }, [showGallery]);
 
   if (loading) {
@@ -146,7 +189,8 @@ const ArtistProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -329,7 +373,7 @@ const ArtistProfile = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h3 className="text-xl font-semibold text-gray-900 mb-6">Portfolio</h3>
           
-          {artist.portfolio && artist.portfolio.length > 0 ? (
+          {artist && artist.portfolio && artist.portfolio.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {artist.portfolio.map((image, index) => (
                 <div
@@ -355,8 +399,20 @@ const ArtistProfile = () => {
       </div>
 
       {/* Gallery Modal */}
-      {showGallery && artist.portfolio && artist.portfolio.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50">
+      {showGallery && artist && artist.portfolio && artist.portfolio.length > 0 && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            overflow: 'hidden'
+          }}
+        >
           <div className="relative max-w-7xl h-full w-full flex flex-col items-center justify-center">
             {/* Close Button */}
             <button
@@ -367,7 +423,7 @@ const ArtistProfile = () => {
             </button>
             
             {/* Navigation Buttons */}
-            {artist.portfolio.length > 1 && (
+            {artist && artist.portfolio && artist.portfolio.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
@@ -388,15 +444,15 @@ const ArtistProfile = () => {
             <div className="flex items-center justify-center w-full h-full">
               <div className="relative w-full h-full">
                 <img
-                  src={artist.portfolio[galleryIndex]}
-                  alt={`${artist.displayName || artist.name} portfolio ${galleryIndex + 1}`}
+                  src={artist && artist.portfolio ? artist.portfolio[galleryIndex] : ''}
+                  alt={`${artist && artist.displayName ? artist.displayName : artist && artist.name ? artist.name : 'Artist'} portfolio ${galleryIndex + 1}`}
                   className="w-full h-full object-contain"
                 />
               </div>
             </div>
             
             {/* Image Counter */}
-            {artist.portfolio.length > 1 && (
+            {artist && artist.portfolio && artist.portfolio.length > 1 && (
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm">
                 {galleryIndex + 1} of {artist.portfolio.length}
               </div>
@@ -404,7 +460,8 @@ const ArtistProfile = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

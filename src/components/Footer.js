@@ -10,7 +10,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <img src="/favicon.ico" alt="nailXpress" className="h-8 w-8" />
+              <img src="/logo.png" alt="nailXpress" className="h-8 w-8" />
               <span className="text-xl text-white"><span className="font-normal">nail</span><span className="font-bold">Xpress</span></span>
             </div>
             <p className="text-white mb-6 max-w-md">

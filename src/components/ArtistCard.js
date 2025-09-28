@@ -15,11 +15,9 @@ const ArtistCard = ({ artist }) => {
 
   const handleShare = async (e) => {
     e.stopPropagation(); // Prevent card click
-    const shareUrl = `@https://nailxpress.net/artists/${artist.username || artist.displayName || artist.name}`;
+    const shareUrl = `https://nailxpress.net/artist/${artist.id}`;
     try {
       await navigator.share({
-        title: `nailXpress`,
-        text: `Check out ${artist.displayName || artist.name}'s nail art portfolio on nailXpress`,
         url: shareUrl
       });
     } catch (error) {

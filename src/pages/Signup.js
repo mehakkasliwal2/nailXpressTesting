@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { doc, setDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
-import { deleteUser } from 'firebase/auth';
+import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { Mail, Lock, Eye, EyeOff, User, Palette } from 'lucide-react';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast'; // Unused
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -124,7 +123,7 @@ const Signup = () => {
     } else if (!/(?=.*\d)/.test(formData.password)) {
       setErrors({ password: 'Password must contain at least one number' });
       return;
-    } else if (!/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/.test(formData.password)) {
+    } else if (!/(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(formData.password)) {
       setErrors({ password: 'Password must contain at least one special character' });
       return;
     }
@@ -191,10 +190,10 @@ const Signup = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-start pt-12 pb-16 px-3 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <img src="/favicon.ico" alt="nailXpress" className="h-12 w-12" />
+          <img src="/logo.png" alt="nailXpress" className="h-12 w-12" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
           Create your account
@@ -247,7 +246,7 @@ const Signup = () => {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">

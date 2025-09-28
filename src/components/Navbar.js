@@ -44,7 +44,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <img src="/favicon.ico" alt="nailXpress" className="h-8 w-8" />
+            <img src="/logo.png" alt="nailXpress" className="h-8 w-8" />
             <span className="text-xl text-pink-600">
               <span className="font-normal">nail</span><span className="font-bold">Xpress</span>
             </span>

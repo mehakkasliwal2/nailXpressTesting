@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { User, Heart, Calendar, Star, Search, MapPin } from 'lucide-react';
+import { Heart, Calendar, Star, Search, MapPin } from 'lucide-react';
 
 const UserDashboard = () => {
   const { userProfile } = useAuth();

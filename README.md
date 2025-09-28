@@ -66,28 +66,15 @@ nailXpress V2 is a modern, AI-powered platform that connects clients with nail a
    ```
 
 3. **Environment Setup**
-   Copy the example environment file and fill in your API keys:
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Then edit `.env.local` with your actual API keys:
+   Create a `.env.local` file in the root directory:
    ```env
-   # Firebase Configuration
-   REACT_APP_FIREBASE_API_KEY=your_firebase_api_key_here
-   REACT_APP_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-   REACT_APP_FIREBASE_DATABASE_URL=https://your_project_id-default-rtdb.firebaseio.com
-   REACT_APP_FIREBASE_PROJECT_ID=your_project_id
-   REACT_APP_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
-   REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-   REACT_APP_FIREBASE_APP_ID=your_app_id
-   REACT_APP_FIREBASE_MEASUREMENT_ID=your_measurement_id
-   
-   # Google Maps API
-   REACT_APP_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
-   
-   # Replicate AI API
    REACT_APP_REPLICATE_API_TOKEN=your_replicate_token_here
+   REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
+   REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   REACT_APP_FIREBASE_PROJECT_ID=your_project_id
+   REACT_APP_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   REACT_APP_FIREBASE_APP_ID=your_app_id
    ```
 
 4. **Start development server**
@@ -226,5 +213,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 For support, email support@nailxpress.com or create an issue in this repository.
 
 ---
-
 **Built with ❤️ by the nailXpress team**

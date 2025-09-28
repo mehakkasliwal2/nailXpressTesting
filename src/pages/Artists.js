@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useArtists } from '../contexts/ArtistContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Search, MapPin, Sparkles, Grid, List, Lock, Share2, Heart } from 'lucide-react';
+import { Search, MapPin, Sparkles, Grid, List, Share2, Heart } from 'lucide-react';
 import ArtistCard from '../components/ArtistCard';
 import ImageUploadModal from '../components/ImageUploadModal';
 import toast from 'react-hot-toast';
@@ -10,8 +10,13 @@ const Artists = () => {
   const { artists, loading, filters, updateFilters, clearFilters } = useArtists();
   const { currentUser, userProfile } = useAuth();
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid', 'list'
+  const [viewMode, setViewMode] = useState(() => {
+    // Load saved view mode from localStorage, default to 'grid'
+    const savedViewMode = localStorage.getItem('artists_view_mode');
+    return savedViewMode || 'grid';
+  });
   const [favoritedArtists, setFavoritedArtists] = useState(new Set());
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Load favorited artists from localStorage
   useEffect(() => {
@@ -28,6 +33,11 @@ const Artists = () => {
   const popularStyles = [
     'French Tips', 'Gel Extensions', 'Nail Art', 'Ombre', 'Glitter',
     'Acrylic', 'Dip Powder', 'Stiletto', 'Coffin', 'Almond'
+  ];
+
+  const popularColors = [
+    'Red', 'Pink', 'Purple', 'Blue', 'Green', 'Yellow', 'Orange', 
+    'Black', 'White', 'Gold', 'Silver', 'Neon', 'Pastel'
   ];
 
   const popularLocations = [
@@ -49,6 +59,20 @@ const Artists = () => {
     }
   };
 
+  const handleColorFilter = (color) => {
+    const currentColors = filters.color || [];
+    
+    // If already selected, remove it
+    if (currentColors.includes(color)) {
+      const updatedColors = currentColors.filter(c => c !== color);
+      updateFilters({ color: updatedColors });
+    } else {
+      // Add to selection
+      const updatedColors = [...currentColors, color];
+      updateFilters({ color: updatedColors });
+    }
+  };
+
   const handleLocationFilter = (location) => {
     // If already selected, deselect it
     if (filters.location === location) {
@@ -65,11 +89,9 @@ const Artists = () => {
   };
 
   const handleShare = async (artist) => {
-    const shareUrl = `@https://nailxpress.net/artists/${artist.username || artist.displayName || artist.name}`;
+    const shareUrl = `https://nailxpress.net/artist/${artist.id}`;
     try {
       await navigator.share({
-        title: `nailXpress`,
-        text: `Check out ${artist.displayName || artist.name}'s nail art portfolio on nailXpress`,
         url: shareUrl
       });
     } catch (error) {
@@ -108,6 +130,11 @@ const Artists = () => {
     localStorage.setItem(`favorites_${currentUser.uid}`, JSON.stringify(favorites));
   };
 
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('artists_view_mode', mode);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -134,7 +161,7 @@ const Artists = () => {
               
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setViewMode('grid')}
+                  onClick={() => handleViewModeChange('grid')}
                   className={`p-2 rounded-lg transition-colors ${
                     viewMode === 'grid' ? 'bg-pink-100 text-pink-600' : 'text-gray-600 hover:bg-gray-100'
                   }`}
@@ -143,7 +170,7 @@ const Artists = () => {
                   <Grid className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setViewMode('list')}
+                  onClick={() => handleViewModeChange('list')}
                   className={`p-2 rounded-lg transition-colors ${
                     viewMode === 'list' ? 'bg-pink-100 text-pink-600' : 'text-gray-600 hover:bg-gray-100'
                   }`}
@@ -161,9 +188,33 @@ const Artists = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
           <div className="lg:w-80">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
+            {/* Mobile Filter Toggle */}
+            <div className="lg:hidden mb-4">
+              <button
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                className="w-full flex items-center justify-between bg-white rounded-lg shadow-sm p-4 border border-gray-200"
+              >
+                <div className="flex items-center gap-2">
+                  <Search className="w-5 h-5 text-pink-600" />
+                  <span className="font-medium text-gray-900">Filters</span>
+                  {(filters.location || (filters.style && filters.style.length > 0) || filters.search) && (
+                    <span className="bg-pink-100 text-pink-600 text-xs px-2 py-1 rounded-full">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <div className={`transform transition-transform ${showMobileFilters ? 'rotate-180' : ''}`}>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+            </div>
+
+            {/* Filters Content */}
+            <div className={`bg-white rounded-lg shadow-sm p-6 sticky top-24 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+                <h2 className="text-lg font-semibold text-gray-900 hidden lg:block">Filters</h2>
                 <button
                   onClick={clearFilters}
                   className="text-sm text-pink-600 hover:text-pink-700 font-medium"
@@ -173,7 +224,7 @@ const Artists = () => {
               </div>
 
               {/* Active Filters - Moved to top */}
-              {(filters.location || (filters.style && filters.style.length > 0) || filters.search) && (
+              {(filters.location || (filters.style && filters.style.length > 0) || (filters.color && filters.color.length > 0) || filters.search) && (
                 <div className="mb-6 border-b pb-4">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Active Filters</h3>
                   <div className="space-y-1">
@@ -197,6 +248,24 @@ const Artists = () => {
                               onClick={() => {
                                 const updatedStyles = filters.style.filter(s => s !== selectedStyle);
                                 updateFilters({ style: updatedStyles });
+                              }}
+                              className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {filters.color && filters.color.length > 0 && (
+                      <div className="space-y-1">
+                        {filters.color.map((selectedColor, index) => (
+                          <div key={index} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Color: {selectedColor}</span>
+                            <button
+                              onClick={() => {
+                                const updatedColors = filters.color.filter(c => c !== selectedColor);
+                                updateFilters({ color: updatedColors });
                               }}
                               className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"
                             >
@@ -230,7 +299,7 @@ const Artists = () => {
                   <input
                     type="text"
                     name="search"
-                    placeholder="Artist name, style..."
+                    placeholder="Artist name, location, style..."
                     defaultValue={filters.search}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                   />
@@ -246,7 +315,7 @@ const Artists = () => {
               {/* Location Filter */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location
+                  Popular Locations
                 </label>
                 <div className="space-y-2">
                   {popularLocations.map((location) => (
@@ -288,6 +357,57 @@ const Artists = () => {
                 </div>
               </div>
 
+              {/* Color Filter */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Colors
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {popularColors.map((color) => {
+                    const isSelected = filters.color?.includes(color);
+                    const getColorStyles = (colorName) => {
+                      if (!isSelected) {
+                        return 'bg-gray-100 text-gray-600 hover:bg-gray-200';
+                      }
+                      
+                      // Pink uses the same theme as other filters
+                      if (colorName === 'Pink') {
+                        return 'bg-pink-100 text-pink-700 border border-pink-300';
+                      }
+                      
+                      // All other colors use light backgrounds with dark text and colored borders
+                      const colorMap = {
+                        'Red': 'bg-red-100 text-red-700 border border-red-300',
+                        'Purple': 'bg-purple-100 text-purple-700 border border-purple-300',
+                        'Blue': 'bg-blue-100 text-blue-700 border border-blue-300',
+                        'Green': 'bg-green-100 text-green-700 border border-green-300',
+                        'Yellow': 'bg-yellow-100 text-yellow-700 border border-yellow-300',
+                        'Orange': 'bg-orange-100 text-orange-700 border border-orange-300',
+                        'Black': 'bg-gray-300 text-gray-800 border border-gray-500',
+                        'White': 'bg-white text-gray-800 border border-gray-300',
+                        'Gold': 'bg-yellow-100 text-yellow-700 border border-yellow-300',
+                        'Silver': 'bg-gray-100 text-gray-700 border border-gray-300',
+                        'Neon': 'bg-lime-100 text-lime-700 border border-lime-300',
+                        'Pastel': 'bg-pink-100 text-pink-700 border border-pink-300'
+                      };
+                      return colorMap[colorName] || 'bg-gray-100 text-gray-600 border border-gray-300';
+                    };
+
+                    return (
+                      <button
+                        key={color}
+                        onClick={() => handleColorFilter(color)}
+                        className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                          isSelected ? '' : 'border-transparent'
+                        } ${getColorStyles(color)}`}
+                      >
+                        {color}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -320,7 +440,11 @@ const Artists = () => {
                     const isFavorited = favoritedArtists.has(artist.id);
                     
                     return (
-                    <div key={artist.id} className={`${artist.profileBackgroundColor || 'bg-white'} rounded-lg shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition-shadow`}>
+                    <div 
+                      key={artist.id} 
+                      onClick={() => window.location.href = `/artist/${artist.id}`}
+                      className={`${artist.profileBackgroundColor || 'bg-white'} rounded-lg shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer`}
+                    >
                       {/* Profile Picture */}
                       <div className="flex-shrink-0">
                         <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg bg-white">
@@ -340,51 +464,49 @@ const Artists = () => {
                       
                       {/* Artist Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">
+                        <h3 className="text-lg sm:text-lg font-medium sm:font-semibold text-gray-900 truncate">
                           {artist.displayName || artist.name}
                         </h3>
                         <div className="flex items-center gap-1 text-gray-600 mt-1">
-                          <MapPin className="w-4 h-4 flex-shrink-0" />
-                          <span className="text-sm truncate">
+                          <MapPin className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
+                          <span className="text-sm sm:text-sm truncate">
                             {artist.city && artist.state ? `${artist.city}, ${artist.state}` : artist.location}
                           </span>
                         </div>
                       </div>
                       
                       {/* Action Buttons */}
-                      <div className="flex-shrink-0 flex items-center gap-2">
+                      <div className="flex-shrink-0 flex items-center gap-1 sm:gap-2">
                         {/* Share and Heart buttons */}
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5 sm:gap-1">
                           <button
-                            onClick={() => handleShare(artist)}
-                            className="p-2 text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShare(artist);
+                            }}
+                            className="p-1.5 sm:p-2 text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded transition-colors"
                             title="Share"
                           >
-                            <Share2 className="w-4 h-4" />
+                            <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </button>
                           {/* Only show heart for logged-in clients (not artists) */}
                           {currentUser && userProfile?.userType !== 'artist' && (
                             <button 
-                              onClick={() => handleToggleFavorite(artist)}
-                              className={`p-2 rounded transition-colors ${
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleFavorite(artist);
+                              }}
+                              className={`p-1.5 sm:p-2 rounded transition-colors ${
                                 isFavorited 
                                   ? 'text-red-600 bg-red-50 hover:bg-red-100' 
                                   : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
                               }`}
                               title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                             >
-                              <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                              <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorited ? 'fill-current' : ''}`} />
                             </button>
                           )}
                         </div>
-                        
-                        {/* View Profile Button */}
-                        <button
-                          onClick={() => window.location.href = `/artist/${artist.id}`}
-                          className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-gray-700"
-                        >
-                          View Profile
-                        </button>
                       </div>
                     </div>
                     );

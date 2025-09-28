@@ -4,7 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import ArtistProfileSetup from '../components/ArtistProfileSetup';
-import { User, Edit, Save, X, Camera, MapPin, Instagram, Phone, Mail, Link as LinkIcon, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { User, Edit, X, Camera, MapPin, Instagram, Phone, Mail, Link as LinkIcon, Plus, Trash2, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const ArtistDashboard = () => {
   const { currentUser, userProfile } = useAuth();
@@ -19,6 +20,8 @@ const ArtistDashboard = () => {
   const [showStateDropdown, setShowStateDropdown] = useState(false);
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [showColorDropdown, setShowColorDropdown] = useState(false);
+  const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
+  const [draftPortfolio, setDraftPortfolio] = useState([]);
 
   // Pastel color options for profile backgrounds
   const pastelColors = [
@@ -35,6 +38,122 @@ const ArtistDashboard = () => {
     { name: 'Lilac', value: 'bg-violet-100', hex: '#ede9fe' }
   ];
 
+  // Image compression function
+  const compressImage = (file, maxWidth = 800, quality = 0.8) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(resolve, 'image/jpeg', quality);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  // Handle multiple image upload
+  const handleMultipleImageUpload = async (files, type = 'portfolio') => {
+    if (!files || files.length === 0) return;
+    
+    const currentPortfolio = editingPortfolio ? draftPortfolio : profile.portfolio;
+    
+    if (type === 'portfolio' && currentPortfolio.length + files.length > 15) {
+      toast.error('Maximum 15 portfolio photos allowed');
+      return;
+    }
+    
+    setUploadingPortfolio(true);
+    
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const compressedFile = await compressImage(file);
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(compressedFile);
+        });
+      });
+      
+      const newImages = await Promise.all(uploadPromises);
+      
+      if (editingPortfolio) {
+        // Add to draft portfolio
+        setDraftPortfolio(prev => [...prev, ...newImages]);
+        toast.success(`${newImages.length} photos added to draft`);
+      } else {
+        // Direct upload (non-edit mode)
+        const updatedPortfolio = [...profile.portfolio, ...newImages];
+        setProfile(prev => ({ ...prev, portfolio: updatedPortfolio }));
+        
+        // Update in Firestore
+        await updateDoc(doc(db, 'artists', currentUser.uid), {
+          portfolio: updatedPortfolio
+        });
+        
+        toast.success(`${newImages.length} photos added to portfolio`);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload images');
+    } finally {
+      setUploadingPortfolio(false);
+    }
+  };
+
+  // Handle delete image
+  const handleDeleteImage = (indexToDelete) => {
+    if (!editingPortfolio) return;
+    
+    // Remove from draft portfolio
+    const updatedDraft = draftPortfolio.filter((_, index) => index !== indexToDelete);
+    setDraftPortfolio(updatedDraft);
+    toast.success('Image removed from draft');
+  };
+
+  // Handle save portfolio changes
+  const handleSavePortfolio = async () => {
+    try {
+      // Update profile with draft portfolio
+      setProfile(prev => ({ ...prev, portfolio: draftPortfolio }));
+      
+      // Update in Firestore
+      await updateDoc(doc(db, 'artists', currentUser.uid), {
+        portfolio: draftPortfolio
+      });
+      
+      // Exit edit mode
+      setEditingPortfolio(false);
+      setDraftPortfolio([]);
+      
+      toast.success('Portfolio updated successfully');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save portfolio');
+    }
+  };
+
+  // Handle cancel portfolio changes
+  const handleCancelPortfolio = () => {
+    // Reset draft portfolio and exit edit mode
+    setDraftPortfolio([]);
+    setEditingPortfolio(false);
+    toast.success('Changes discarded');
+  };
+
+  // Initialize draft portfolio when entering edit mode
+  React.useEffect(() => {
+    if (editingPortfolio && draftPortfolio.length === 0 && profile && profile.portfolio) {
+      setDraftPortfolio([...profile.portfolio]);
+    }
+  }, [editingPortfolio, profile, draftPortfolio.length]);
+
   // Redirect non-artists
   React.useEffect(() => {
     if (userProfile && userProfile.userType !== 'artist') {
@@ -42,13 +161,7 @@ const ArtistDashboard = () => {
     }
   }, [userProfile, navigate]);
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchProfile();
-    }
-  }, [currentUser]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = React.useCallback(async () => {
     try {
       const profileRef = doc(db, 'artists', currentUser.uid);
       const profileSnap = await getDoc(profileRef);
@@ -66,7 +179,13 @@ const ArtistDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchProfile();
+    }
+  }, [currentUser, fetchProfile]);
 
   const handleSaveProfile = async () => {
     try {
@@ -500,7 +619,7 @@ const ArtistDashboard = () => {
             <div className="bg-white rounded-lg shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-semibold text-gray-900">Portfolio</h3>
-                {!editingPortfolio ? (
+                {!editingPortfolio && (
                   <button 
                     onClick={() => setEditingPortfolio(true)}
                     className="flex items-center gap-2 text-pink-600 hover:text-pink-700"
@@ -508,27 +627,11 @@ const ArtistDashboard = () => {
                     <Edit className="w-4 h-4" />
                     Edit Portfolio
                   </button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setEditingPortfolio(false)}
-                      className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors"
-                    >
-                      Save
-                    </button>
-                    <button 
-                      onClick={() => setEditingPortfolio(false)}
-                      className="flex items-center gap-2 px-4 py-2 bg-pink-100 text-gray-700 rounded-md hover:bg-pink-200 transition-colors"
-                    >
-                      Cancel
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
                 )}
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {(showAllPortfolio ? profile.portfolio : profile.portfolio.slice(0, 6)).map((image, index) => (
+                {(showAllPortfolio ? (editingPortfolio ? draftPortfolio : profile.portfolio) : (editingPortfolio ? draftPortfolio : profile.portfolio).slice(0, 6)).map((image, index) => (
                   <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
                     <img
                       src={image}
@@ -536,20 +639,23 @@ const ArtistDashboard = () => {
                       className="w-full h-full object-cover"
                     />
                     {editingPortfolio && (
-                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700">
+                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button 
+                          onClick={() => handleDeleteImage(index)}
+                          className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition-colors"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     )}
                   </div>
                 ))}
-                {profile.portfolio.length > 6 && !showAllPortfolio && (
+                {(editingPortfolio ? draftPortfolio : profile.portfolio).length > 6 && !showAllPortfolio && (
                   <button 
                     onClick={() => setShowAllPortfolio(true)}
                     className="aspect-square rounded-lg bg-pink-100 flex items-center justify-center hover:bg-pink-200 transition-colors"
                   >
-                    <span className="text-pink-600 text-sm">+{profile.portfolio.length - 6} more</span>
+                    <span className="text-pink-600 text-sm">+{(editingPortfolio ? draftPortfolio : profile.portfolio).length - 6} more</span>
                   </button>
                 )}
                 {showAllPortfolio && (
@@ -560,12 +666,45 @@ const ArtistDashboard = () => {
                     <span className="text-pink-600 text-sm">Show Less</span>
                   </button>
                 )}
-                {editingPortfolio && (
-                  <button className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-pink-500 hover:bg-pink-50 transition-colors">
-                    <Plus className="w-6 h-6 text-gray-400" />
-                  </button>
+                {editingPortfolio && draftPortfolio.length < 15 && (
+                  <>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handleMultipleImageUpload(e.target.files, 'portfolio')}
+                      className="hidden"
+                      id="portfolio-upload-edit"
+                      disabled={uploadingPortfolio}
+                    />
+                    <label
+                      htmlFor="portfolio-upload-edit"
+                      className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-pink-500 hover:bg-pink-50 transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-6 h-6 text-gray-400" />
+                    </label>
+                  </>
                 )}
               </div>
+              
+              {/* Save/Cancel Buttons at Bottom */}
+              {editingPortfolio && (
+                <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-gray-200">
+                  <button 
+                    onClick={handleSavePortfolio}
+                    className="px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors font-medium"
+                  >
+                    Save Changes
+                  </button>
+                  <button 
+                    onClick={handleCancelPortfolio}
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  >
+                    Cancel
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

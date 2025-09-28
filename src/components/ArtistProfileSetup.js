@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db, storage } from '../firebase';
+import { db } from '../firebase';
 import { doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Camera, Save, Plus, Trash2, Instagram, Phone, Mail, Link as LinkIcon, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -107,20 +106,7 @@ const ArtistProfileSetup = () => {
     { name: 'Lilac', value: 'bg-violet-100', hex: '#ede9fe' }
   ];
 
-  useEffect(() => {
-    if (currentUser) {
-      setProfile(prev => ({
-        ...prev,
-        displayName: currentUser.displayName || '',
-        email: currentUser.email || ''
-      }));
-      
-      // Check if user already has a published artist profile
-      checkExistingProfile();
-    }
-  }, [currentUser]);
-  
-  const checkExistingProfile = async () => {
+  const checkExistingProfile = React.useCallback(async () => {
     try {
       const artistDoc = await getDoc(doc(db, 'artists', currentUser.uid));
       if (artistDoc.exists()) {
@@ -134,7 +120,20 @@ const ArtistProfileSetup = () => {
     } catch (error) {
       console.error('Error checking existing profile:', error);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      setProfile(prev => ({
+        ...prev,
+        displayName: currentUser.displayName || '',
+        email: currentUser.email || ''
+      }));
+      
+      // Check if user already has a published artist profile
+      checkExistingProfile();
+    }
+  }, [currentUser, checkExistingProfile]);
 
   const handleInputChange = (field, value) => {
     if (field.includes('.')) {
@@ -194,7 +193,7 @@ const ArtistProfileSetup = () => {
     console.log('File:', file);
     console.log('Type:', type);
     console.log('Current user:', currentUser?.uid);
-    console.log('Storage instance:', storage);
+    // Storage instance removed as we're using local base64 storage
     
     if (!file) {
       console.log('No file provided');
@@ -718,7 +717,6 @@ const ArtistProfileSetup = () => {
                   <input
                     type="file"
                     accept="image/*"
-                    capture="user"
                     onChange={(e) => handleImageUpload(e.target.files[0], 'profile')}
                     className="hidden"
                     id="profile-upload"
@@ -776,7 +774,6 @@ const ArtistProfileSetup = () => {
                       type="file"
                       accept="image/*"
                       multiple
-                      capture="environment"
                       onChange={(e) => handleMultipleImageUpload(e.target.files, 'portfolio')}
                       className="hidden"
                       id="portfolio-upload"

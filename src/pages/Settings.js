@@ -8,7 +8,7 @@ import { auth } from '../firebase';
 import { Trash2, AlertTriangle, User, Mail, Calendar, Edit, Check, X, AtSign } from 'lucide-react';
 
 const Settings = () => {
-  const { currentUser, userProfile, logout } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState('');

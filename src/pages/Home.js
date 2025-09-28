@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useArtists } from '../contexts/ArtistContext';
-import { Upload, Search, MapPin, Sparkles, X, CheckCircle } from 'lucide-react';
+import { Upload, Search, MapPin, Sparkles, X } from 'lucide-react';
 import ImageUploadModal from '../components/ImageUploadModal';
 // ArtistCard import removed since featured artists section was removed
 // Map image will be loaded from public folder
@@ -20,10 +20,6 @@ export default function Home() {
     navigate('/artists');
   };
 
-  const handleLocationSearch = (location) => {
-    updateFilters({ location });
-    navigate('/artists');
-  };
 
   // featuredArtists removed since featured artists section was removed
 

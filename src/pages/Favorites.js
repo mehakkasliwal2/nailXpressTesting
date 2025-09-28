@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useArtists } from '../contexts/ArtistContext';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Sparkles, Grid, List, Heart, Share2 } from 'lucide-react';
+import { Search, MapPin, Grid, List, Heart, Share2 } from 'lucide-react';
 import ArtistCard from '../components/ArtistCard';
 import toast from 'react-hot-toast';
 
 const Favorites = () => {
   const { currentUser, userProfile } = useAuth();
+  const { artists } = useArtists();
   const navigate = useNavigate();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid', 'list'
+  const [viewMode, setViewMode] = useState(() => {
+    // Load saved view mode from localStorage, default to 'grid'
+    const savedViewMode = localStorage.getItem('favorites_view_mode');
+    return savedViewMode || 'grid';
+  });
   const [searchTerm, setSearchTerm] = useState('');
 
   // Redirect if not logged in or if user is an artist
@@ -25,16 +31,36 @@ const Favorites = () => {
     }
   }, [currentUser, userProfile, navigate]);
 
-  // Load favorites from localStorage
+  // Load favorites from localStorage and clean up deleted artists
   useEffect(() => {
-    if (currentUser && userProfile?.userType !== 'artist') {
+    if (currentUser && userProfile?.userType !== 'artist' && artists.length > 0) {
       const savedFavorites = localStorage.getItem(`favorites_${currentUser.uid}`);
       if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
+        const allFavorites = JSON.parse(savedFavorites);
+        
+        // Filter out favorites that no longer exist in the active artists list
+        const activeArtistIds = new Set(artists.map(artist => artist.id));
+        const validFavorites = allFavorites.filter(favorite => activeArtistIds.has(favorite.id));
+        
+        // Update favorites if some were removed
+        if (validFavorites.length !== allFavorites.length) {
+          const removedCount = allFavorites.length - validFavorites.length;
+          console.log(`Cleaned up ${removedCount} deleted artist(s) from favorites`);
+          
+          // Update localStorage with cleaned favorites
+          localStorage.setItem(`favorites_${currentUser.uid}`, JSON.stringify(validFavorites));
+          
+          // Show a toast if favorites were removed
+          if (removedCount > 0) {
+            toast.success(`Removed ${removedCount} deleted artist(s) from favorites`);
+          }
+        }
+        
+        setFavorites(validFavorites);
       }
       setLoading(false);
     }
-  }, [currentUser, userProfile]);
+  }, [currentUser, userProfile, artists]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -42,11 +68,9 @@ const Favorites = () => {
   };
 
   const handleShare = async (artist) => {
-    const shareUrl = `@https://nailxpress.net/artists/${artist.username || artist.displayName || artist.name}`;
+    const shareUrl = `https://nailxpress.net/artist/${artist.id}`;
     try {
       await navigator.share({
-        title: `nailXpress`,
-        text: `Check out ${artist.displayName || artist.name}'s nail art portfolio on nailXpress`,
         url: shareUrl
       });
     } catch (error) {
@@ -61,6 +85,11 @@ const Favorites = () => {
     setFavorites(updatedFavorites);
     localStorage.setItem(`favorites_${currentUser.uid}`, JSON.stringify(updatedFavorites));
     toast.success('Removed from favorites');
+  };
+
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('favorites_view_mode', mode);
   };
 
   // Filter favorites based on search term
@@ -117,7 +146,7 @@ const Favorites = () => {
               {/* View Toggle */}
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
-                  onClick={() => setViewMode('grid')}
+                  onClick={() => handleViewModeChange('grid')}
                   className={`p-2 rounded-md transition-colors ${
                     viewMode === 'grid' ? 'bg-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
                   }`}
@@ -126,7 +155,7 @@ const Favorites = () => {
                   <Grid className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setViewMode('list')}
+                  onClick={() => handleViewModeChange('list')}
                   className={`p-2 rounded-md transition-colors ${
                     viewMode === 'list' ? 'bg-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
                   }`}
@@ -165,7 +194,11 @@ const Favorites = () => {
         ) : viewMode === 'list' ? (
           <div className="space-y-2">
             {filteredFavorites.map((artist) => (
-              <div key={artist.id} className={`${artist.profileBackgroundColor || 'bg-white'} rounded-lg shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition-shadow`}>
+              <div 
+                key={artist.id} 
+                onClick={() => navigate(`/artist/${artist.id}`)}
+                className={`${artist.profileBackgroundColor || 'bg-white'} rounded-lg shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer`}
+              >
                 {/* Profile Picture */}
                 <div className="flex-shrink-0">
                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg bg-white">
@@ -185,44 +218,42 @@ const Favorites = () => {
                 
                 {/* Artist Info */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">
+                  <h3 className="text-lg sm:text-lg font-medium sm:font-semibold text-gray-900 truncate">
                     {artist.displayName || artist.name}
                   </h3>
                   <div className="flex items-center gap-1 text-gray-600 mt-1">
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm truncate">
+                    <MapPin className="w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="text-sm sm:text-sm truncate">
                       {artist.city && artist.state ? `${artist.city}, ${artist.state}` : artist.location}
                     </span>
                   </div>
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="flex-shrink-0 flex items-center gap-2">
+                <div className="flex-shrink-0 flex items-center gap-1 sm:gap-2">
                   {/* Share and Remove buttons */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 sm:gap-1">
                     <button
-                      onClick={() => handleShare(artist)}
-                      className="p-2 text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare(artist);
+                      }}
+                      className="p-1.5 sm:p-2 text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded transition-colors"
                       title="Share"
                     >
-                      <Share2 className="w-4 h-4" />
+                      <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                     <button
-                      onClick={() => removeFromFavorites(artist.id)}
-                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFromFavorites(artist.id);
+                      }}
+                      className="p-1.5 sm:p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded transition-colors"
                       title="Remove from favorites"
                     >
-                      <Heart className="w-4 h-4 fill-current" />
+                      <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
                     </button>
                   </div>
-                  
-                  {/* View Profile Button */}
-                  <button
-                    onClick={() => navigate(`/artist/${artist.id}`)}
-                    className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-gray-700"
-                  >
-                    View Profile
-                  </button>
                 </div>
               </div>
             ))}

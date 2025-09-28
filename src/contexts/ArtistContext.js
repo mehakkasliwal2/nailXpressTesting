@@ -18,6 +18,7 @@ export const ArtistProvider = ({ children }) => {
   const [filters, setFilters] = useState({
     location: '',
     style: [], // Changed to array for multiple selections
+    color: [], // Added for multiple color selections
     search: ''
   });
 
@@ -62,11 +63,18 @@ export const ArtistProvider = ({ children }) => {
         )
       );
     
+    const matchesColor = !filters.color.length || 
+      filters.color.some(selectedColor => 
+        artist.colors?.some(artistColor => 
+          artistColor.toLowerCase().includes(selectedColor.toLowerCase())
+        )
+      );
+    
     const matchesSearch = !filters.search || 
       artist.displayName?.toLowerCase().includes(filters.search.toLowerCase()) ||
       artist.bio?.toLowerCase().includes(filters.search.toLowerCase());
     
-    return matchesLocation && matchesStyle && matchesSearch;
+    return matchesLocation && matchesStyle && matchesColor && matchesSearch;
   });
 
   // Update filters
@@ -79,6 +87,7 @@ export const ArtistProvider = ({ children }) => {
     setFilters({
       location: '',
       style: [], // Changed to empty array
+      color: [], // Added color field
       search: ''
     });
   };
