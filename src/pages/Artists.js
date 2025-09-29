@@ -357,8 +357,8 @@ const Artists = () => {
                   Search
                 </label>
                 
-                {/* Desktop: Dropdown (only for very large screens) */}
-                <div className="hidden 2xl:block">
+                {/* Desktop: Dropdown (only for extremely large screens) */}
+                <div className="hidden 4xl:block">
                   <form onSubmit={handleSearch} className="flex gap-2">
                     <select
                       value={searchType}
@@ -390,8 +390,8 @@ const Artists = () => {
                   </form>
                 </div>
 
-                {/* Tablet/Mobile/Standard Desktop: Side buttons */}
-                <div className="2xl:hidden">
+                {/* Tablet/Mobile/Standard Desktop/Large Desktop: Side buttons */}
+                <div className="4xl:hidden">
                   <div className="flex gap-2 mb-3">
                     <button
                       type="button"

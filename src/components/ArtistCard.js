@@ -120,7 +120,7 @@ const ArtistCard = ({ artist }) => {
                   }`}
                   title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                 >
-                  <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                  <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current text-red-600' : 'text-gray-600'}`} />
                 </button>
               )}
             </div>
