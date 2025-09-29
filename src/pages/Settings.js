@@ -27,7 +27,6 @@ const Settings = () => {
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
             const userData = userSnap.data();
-            console.log('Direct fetch - userData:', userData);
             setLocalUserProfile(userData);
           }
         } catch (error) {
@@ -45,22 +44,6 @@ const Settings = () => {
     setEditedName(name);
   }, [userProfile?.name, localUserProfile?.name, currentUser?.displayName]);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('=== SETTINGS DEBUG ===');
-    console.log('Settings - currentUser:', currentUser);
-    console.log('Settings - userProfile:', userProfile);
-    console.log('Settings - userProfile type:', typeof userProfile);
-    console.log('Settings - userProfile keys:', userProfile ? Object.keys(userProfile) : 'null');
-    if (userProfile) {
-      console.log('userProfile.name:', userProfile.name);
-      console.log('userProfile.username:', userProfile.username);
-      console.log('userProfile.email:', userProfile.email);
-      console.log('userProfile.userType:', userProfile.userType);
-      console.log('userProfile.createdAt:', userProfile.createdAt);
-    }
-    console.log('=== END DEBUG ===');
-  }, [currentUser, userProfile]);
 
   const handleDeleteAccount = async () => {
     if (deleteConfirm !== 'DELETE') {
@@ -85,7 +68,6 @@ const Settings = () => {
           const deletePromises = listResult.items.map(item => item.delete());
           await Promise.all(deletePromises);
         } catch (storageError) {
-          console.log('No storage files to delete or error deleting files:', storageError);
         }
       }
 

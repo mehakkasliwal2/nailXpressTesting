@@ -45,7 +45,6 @@ const Favorites = () => {
         // Update favorites if some were removed
         if (validFavorites.length !== allFavorites.length) {
           const removedCount = allFavorites.length - validFavorites.length;
-          console.log(`Cleaned up ${removedCount} deleted artist(s) from favorites`);
           
           // Update localStorage with cleaned favorites
           localStorage.setItem(`favorites_${currentUser.uid}`, JSON.stringify(validFavorites));

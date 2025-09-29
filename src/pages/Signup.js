@@ -89,20 +89,16 @@ const Signup = () => {
 
     // Check username uniqueness before creating account
     try {
-      console.log('Pre-signup username check for:', formData.username);
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('username', '==', formData.username));
       const querySnapshot = await getDocs(q);
       
-      console.log('Pre-signup: Found users with this username:', querySnapshot.size);
       
       if (!querySnapshot.empty) {
         setErrors({ username: 'Username is already taken. Please try a different username.' });
         return;
       }
-      console.log('Pre-signup: Username is available');
     } catch (usernameError) {
-      console.log('Pre-signup username check failed:', usernameError);
       setErrors({ username: 'Unable to verify username availability. Please try again later.' });
       return;
     }
@@ -151,14 +147,9 @@ const Signup = () => {
         updatedAt: new Date()
       };
 
-      console.log('=== REGULAR SIGNUP DEBUG ===');
-      console.log('Saving to Firestore:', userData);
-      console.log('User UID:', userCredential.uid);
       
       await setDoc(doc(db, 'users', userCredential.uid), userData);
           
-      console.log('Successfully saved to Firestore');
-      console.log('=== END REGULAR SIGNUP DEBUG ===');
       
       // Navigate based on user type
       if (userType === 'artist') {

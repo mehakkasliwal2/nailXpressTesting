@@ -17,6 +17,7 @@ const Artists = () => {
   });
   const [favoritedArtists, setFavoritedArtists] = useState(new Set());
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [searchType, setSearchType] = useState('artistName');
 
   // Load favorited artists from localStorage
   useEffect(() => {
@@ -84,8 +85,20 @@ const Artists = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    const searchTerm = e.target.search.value;
-    updateFilters({ search: searchTerm });
+    const searchTerm = e.target.search.value.trim();
+    if (!searchTerm) return;
+
+    // Update the specific search filter based on searchType
+    if (searchType === 'artistName') {
+      updateFilters({ artistName: searchTerm });
+    } else if (searchType === 'city') {
+      updateFilters({ citySearch: searchTerm });
+    } else if (searchType === 'state') {
+      updateFilters({ stateSearch: searchTerm });
+    }
+
+    // Clear the input field
+    e.target.search.value = '';
   };
 
   const handleShare = async (artist) => {
@@ -139,14 +152,40 @@ const Artists = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-20 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Nail Artists</h1>
               <p className="text-gray-600 mt-1">
-                {artists.length} artists found
-                {filters.location && ` in ${filters.location}`}
-                {filters.style && filters.style.length > 0 && ` specializing in ${filters.style.join(', ')}`}
+                {(() => {
+                  const parts = [`${artists.length} artists found`];
+                  
+                  const locationFilters = [];
+                  if (filters.citySearch) locationFilters.push(`in city "${filters.citySearch}"`);
+                  if (filters.stateSearch) locationFilters.push(`in state "${filters.stateSearch}"`);
+                  if (filters.location) locationFilters.push(`in ${filters.location}`);
+                  
+                  if (filters.artistName && locationFilters.length > 0) {
+                    parts.push(`named "${filters.artistName}" ${locationFilters.join(' and ')}`);
+                  } else {
+                    if (filters.artistName) parts.push(`named "${filters.artistName}"`);
+                    locationFilters.forEach(location => parts.push(location));
+                  }
+                  
+                  if (filters.style && filters.style.length > 0) parts.push(`with style "${filters.style.join(', ')}"`);
+                  if (filters.color && filters.color.length > 0) parts.push(`with colors "${filters.color.join(', ')}"`);
+                  
+                  if (parts.length === 1) return parts[0];
+                  if (parts.length === 2) return `${parts[0]} ${parts[1]}`;
+                  
+                  const otherParts = parts.slice(1);
+                  const lastPart = otherParts.pop();
+                  if (otherParts.length === 0) {
+                    return `${parts[0]} ${lastPart}`;
+                  } else {
+                    return `${parts[0]} ${otherParts.join(', ')} and ${lastPart}`;
+                  }
+                })()}
               </p>
             </div>
             
@@ -184,12 +223,12 @@ const Artists = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-20 py-8">
+        <div className="flex flex-col md:flex-row gap-8">
           {/* Filters Sidebar */}
-          <div className="lg:w-80">
+          <div className="md:w-72 lg:w-96">
             {/* Mobile Filter Toggle */}
-            <div className="lg:hidden mb-4">
+            <div className="md:hidden mb-4">
               <button
                 onClick={() => setShowMobileFilters(!showMobileFilters)}
                 className="w-full flex items-center justify-between bg-white rounded-lg shadow-sm p-4 border border-gray-200"
@@ -197,7 +236,7 @@ const Artists = () => {
                 <div className="flex items-center gap-2">
                   <Search className="w-5 h-5 text-pink-600" />
                   <span className="font-medium text-gray-900">Filters</span>
-                  {(filters.location || (filters.style && filters.style.length > 0) || filters.search) && (
+                  {(filters.location || (filters.style && filters.style.length > 0) || (filters.color && filters.color.length > 0) || filters.artistName || filters.citySearch || filters.stateSearch) && (
                     <span className="bg-pink-100 text-pink-600 text-xs px-2 py-1 rounded-full">
                       Active
                     </span>
@@ -212,9 +251,9 @@ const Artists = () => {
             </div>
 
             {/* Filters Content */}
-            <div className={`bg-white rounded-lg shadow-sm p-6 sticky top-24 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
+            <div className={`bg-white rounded-lg shadow-sm p-6 sticky top-24 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 hidden lg:block">Filters</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 hidden md:block">Filters</h2>
                 <button
                   onClick={clearFilters}
                   className="text-sm text-pink-600 hover:text-pink-700 font-medium"
@@ -224,7 +263,7 @@ const Artists = () => {
               </div>
 
               {/* Active Filters - Moved to top */}
-              {(filters.location || (filters.style && filters.style.length > 0) || (filters.color && filters.color.length > 0) || filters.search) && (
+              {(filters.location || (filters.style && filters.style.length > 0) || (filters.color && filters.color.length > 0) || filters.artistName || filters.citySearch || filters.stateSearch) && (
                 <div className="mb-6 border-b pb-4">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Active Filters</h3>
                   <div className="space-y-1">
@@ -275,11 +314,33 @@ const Artists = () => {
                         ))}
                       </div>
                     )}
-                    {filters.search && (
+                    {filters.artistName && (
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Search: {filters.search}</span>
+                        <span className="text-gray-600">Artist: "{filters.artistName}"</span>
                         <button
-                          onClick={() => updateFilters({ search: '' })}
+                          onClick={() => updateFilters({ artistName: '' })}
+                          className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                    {filters.citySearch && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">City: "{filters.citySearch}"</span>
+                        <button
+                          onClick={() => updateFilters({ citySearch: '' })}
+                          className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                    {filters.stateSearch && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">State: "{filters.stateSearch}"</span>
+                        <button
+                          onClick={() => updateFilters({ stateSearch: '' })}
                           className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"
                         >
                           ×
@@ -295,21 +356,96 @@ const Artists = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Search
                 </label>
-                <form onSubmit={handleSearch} className="relative">
-                  <input
-                    type="text"
-                    name="search"
-                    placeholder="Artist name, location, style..."
-                    defaultValue={filters.search}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <Search className="w-4 h-4" />
-                  </button>
-                </form>
+                
+                {/* Desktop: Dropdown (only for very large screens) */}
+                <div className="hidden 2xl:block">
+                  <form onSubmit={handleSearch} className="flex gap-2">
+                    <select
+                      value={searchType}
+                      onChange={(e) => setSearchType(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none bg-white"
+                    >
+                      <option value="artistName">Artist Name</option>
+                      <option value="state">State</option>
+                      <option value="city">City</option>
+                    </select>
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        name="search"
+                        placeholder={
+                          searchType === 'artistName' ? "Search by artist name..." :
+                          searchType === 'city' ? "Search by city..." :
+                          "Search by state..."
+                        }
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none pr-10"
+                      />
+                      <button
+                        type="submit"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <Search className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Tablet/Mobile/Standard Desktop: Side buttons */}
+                <div className="2xl:hidden">
+                  <div className="flex gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setSearchType('artistName')}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                        searchType === 'artistName'
+                          ? 'bg-pink-100 text-pink-700 border-pink-300'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Artist Name
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSearchType('state')}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                        searchType === 'state'
+                          ? 'bg-pink-100 text-pink-700 border-pink-300'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      State
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSearchType('city')}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                        searchType === 'city'
+                          ? 'bg-pink-100 text-pink-700 border-pink-300'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      City
+                    </button>
+                  </div>
+                  <form onSubmit={handleSearch} className="relative">
+                    <input
+                      type="text"
+                      name="search"
+                      placeholder={
+                        searchType === 'artistName' ? "Search by artist name..." :
+                        searchType === 'city' ? "Search by city..." :
+                        "Search by state..."
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 focus:outline-none pr-10"
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <Search className="w-4 h-4" />
+                    </button>
+                  </form>
+                </div>
               </div>
 
               {/* Location Filter */}

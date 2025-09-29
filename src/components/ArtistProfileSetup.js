@@ -115,7 +115,6 @@ const ArtistProfileSetup = () => {
         setIsPublished(true);
         setIsEditing(true);
         setCurrentStep(5); // Go directly to review/edit step
-        console.log('Existing artist profile found, switching to edit mode');
       }
     } catch (error) {
       console.error('Error checking existing profile:', error);
@@ -189,14 +188,9 @@ const ArtistProfileSetup = () => {
   };
 
   const handleImageUpload = async (file, type = 'portfolio') => {
-    console.log('=== SINGLE IMAGE UPLOAD DEBUG ===');
-    console.log('File:', file);
-    console.log('Type:', type);
-    console.log('Current user:', currentUser?.uid);
     // Storage instance removed as we're using local base64 storage
     
     if (!file) {
-      console.log('No file provided');
       return;
     }
     
@@ -214,25 +208,20 @@ const ArtistProfileSetup = () => {
     }
     
     try {
-      console.log('Compressing image...');
       const compressedFile = await compressImage(file);
-      console.log('Image compressed, original size:', file.size, 'compressed size:', compressedFile.size);
       
       // Convert compressed file to base64 for local storage (much smaller than original)
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64String = e.target.result;
-        console.log('Base64 string length:', base64String.length);
         
         if (type === 'profile') {
           setProfile(prev => ({ ...prev, profileImage: base64String }));
           toast.success('Profile photo compressed and saved');
-          console.log('Profile image saved locally (compressed)');
           setUploadingProfileImage(false);
         } else {
           setProfile(prev => ({ ...prev, portfolio: [...prev.portfolio, base64String] }));
           toast.success(`Portfolio photo compressed and saved (${profile.portfolio.length + 1}/15)`);
-          console.log('Portfolio image saved locally (compressed)');
           setUploadingPortfolio(false);
         }
       };
@@ -248,18 +237,10 @@ const ArtistProfileSetup = () => {
       }
     }
     
-    console.log('=== END SINGLE IMAGE UPLOAD DEBUG ===');
   };
 
   const handleMultipleImageUpload = async (files, type = 'portfolio') => {
-    console.log('=== MULTIPLE IMAGE UPLOAD DEBUG ===');
-    console.log('Files:', files);
-    console.log('Files length:', files?.length);
-    console.log('Type:', type);
-    console.log('Current user:', currentUser?.uid);
-    
     if (!files || files.length === 0) {
-      console.log('No files provided');
       return;
     }
     
@@ -277,22 +258,17 @@ const ArtistProfileSetup = () => {
     }
     
     try {
-      console.log('Processing and compressing multiple images...');
       
       // Compress all images and convert to base64
       const processPromises = Array.from(files).map(async (file, index) => {
-        console.log(`Processing file ${index + 1}:`, file.name);
-        
         // Compress image
         const compressedFile = await compressImage(file);
-        console.log(`File ${index + 1} compressed, original: ${file.size} bytes, compressed: ${compressedFile.size} bytes`);
         
         // Convert to base64
         return new Promise((resolve) => {
           const reader = new FileReader();
           reader.onload = (e) => {
             const base64String = e.target.result;
-            console.log(`File ${index + 1} base64 length:`, base64String.length);
             resolve(base64String);
           };
           reader.readAsDataURL(compressedFile);
@@ -300,17 +276,14 @@ const ArtistProfileSetup = () => {
       });
       
       const base64Strings = await Promise.all(processPromises);
-      console.log('All images processed successfully');
       
       if (type === 'profile') {
         setProfile(prev => ({ ...prev, profileImage: base64Strings[0] }));
         toast.success('Profile photo compressed and saved');
-        console.log('Profile image saved locally (compressed)');
         setUploadingProfileImage(false);
       } else {
         setProfile(prev => ({ ...prev, portfolio: [...prev.portfolio, ...base64Strings] }));
         toast.success(`${base64Strings.length} portfolio photos compressed and saved (${profile.portfolio.length + base64Strings.length}/15)`);
-        console.log('Portfolio images saved locally (compressed)');
         setUploadingPortfolio(false);
       }
     } catch (error) {
@@ -323,7 +296,6 @@ const ArtistProfileSetup = () => {
       }
     }
     
-    console.log('=== END MULTIPLE IMAGE UPLOAD DEBUG ===');
   };
 
   const removePortfolioImage = (index) => {
@@ -364,11 +336,9 @@ const ArtistProfileSetup = () => {
         profileData.createdAt = new Date();
       }
       
-      console.log('Saving artist profile:', profileData);
       
       // Save/update artist profile to artists collection
       await setDoc(doc(db, 'artists', currentUser.uid), profileData);
-      console.log('Artist profile saved successfully');
       
       // Update user profile to mark them as an artist (only if not already an artist)
       if (!isPublished) {
@@ -376,7 +346,6 @@ const ArtistProfileSetup = () => {
           userType: 'artist',
           updatedAt: new Date()
         });
-        console.log('User profile updated to artist');
       }
       
       setIsPublished(true);
@@ -706,7 +675,7 @@ const ArtistProfileSetup = () => {
                       console.error('Profile image failed to load:', profile.profileImage);
                       e.target.style.display = 'none';
                     }}
-                    onLoad={() => console.log('Profile image loaded successfully:', profile.profileImage)}
+                    onLoad={() => {}}
                   />
                 ) : (
                   <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center border-2 border-dashed border-gray-300">
@@ -752,7 +721,7 @@ const ArtistProfileSetup = () => {
                         console.error('Image failed to load:', image);
                         e.target.style.display = 'none';
                       }}
-                      onLoad={() => console.log('Image loaded successfully:', image)}
+                      onLoad={() => {}}
                     />
                     <button
                       onClick={() => removePortfolioImage(index)}

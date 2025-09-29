@@ -10,8 +10,8 @@ import '../styles/Home.css';
 export default function Home() {
   const navigate = useNavigate();
   const { updateFilters } = useArtists();
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const [showArtistModal, setShowArtistModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e) => {
@@ -170,16 +170,6 @@ export default function Home() {
 
 
 
-      {/* Image Upload Modal */}
-      {showUploadModal && (
-        <ImageUploadModal
-          onClose={() => setShowUploadModal(false)}
-          onSuccess={() => {
-            setShowUploadModal(false);
-            navigate('/artists');
-          }}
-        />
-      )}
 
       {/* Artist Info Modal */}
       {showArtistModal && (
@@ -295,6 +285,17 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Image Upload Modal */}
+      {showUploadModal && (
+        <ImageUploadModal
+          onClose={() => setShowUploadModal(false)}
+          onSuccess={() => {
+            setShowUploadModal(false);
+            navigate('/artists');
+          }}
+        />
+      )}
     </div>
   );
 }
