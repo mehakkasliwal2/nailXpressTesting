@@ -225,7 +225,7 @@ export default function Home() {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload Your Portfolio</h3>
-                    <p className="text-gray-600">Showcase 10–15 photos of your nail work across different styles (e.g., minimalist, acrylic, French tips, seasonal designs).</p>
+                    <p className="text-gray-600">Showcase 5–15 photos of your nail work across different styles (e.g., minimalist, acrylic, French tips, seasonal designs).</p>
                   </div>
                 </div>
 

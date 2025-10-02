@@ -140,11 +140,11 @@ const Locations = () => {
         </div>
       </div>
 
-      <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-20 py-4 sm:py-8 2xl:pb-4">
+      <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-20 py-2 sm:py-8 2xl:pb-4">
         {/* Map */}
-        <div className="mb-4 flex justify-center">
+        <div className="mb-2 sm:mb-4 flex justify-center">
           <div className="w-full max-w-6xl">
-            <div className="w-full h-[450px] sm:h-[550px] bg-pink-50 rounded-lg overflow-hidden relative mb-4">
+            <div className="w-full h-[400px] sm:h-[550px] bg-pink-50 rounded-lg overflow-hidden relative mb-1 sm:mb-4">
               <div className="w-full h-full relative -mt-6 -mb-32 sm:mt-0 sm:mb-0">
                 <USMap 
                   artistLocations={artistLocations}
