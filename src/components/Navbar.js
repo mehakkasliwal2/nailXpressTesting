@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Menu, X, User, LogOut, Home, Users, ChevronDown, Settings, Palette, BookOpen, Heart } from 'lucide-react';
+import { Menu, X, User, LogOut, Home, Users, ChevronDown, Settings, Palette, BookOpen, Heart, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Navbar = () => {
@@ -66,6 +66,13 @@ const Navbar = () => {
             >
               <Users className="w-4 h-4 inline mr-1" />
               Our Artists
+            </Link>
+            <Link
+              to="/locations"
+              className="text-gray-700 hover:text-pink-600 hover:bg-pink-50 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              <MapPin className="w-4 h-4 inline mr-1" />
+              Locations
             </Link>
             <Link
               to="/about"
@@ -199,6 +206,14 @@ const Navbar = () => {
                   >
                     <Users className="w-4 h-4 inline mr-2" />
                     Our Artists
+                  </Link>
+                  <Link
+                    to="/locations"
+                    className="text-gray-700 hover:text-pink-600 hover:bg-pink-50 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <MapPin className="w-4 h-4 inline mr-2" />
+                    Locations
                   </Link>
                   <Link
                     to="/about"

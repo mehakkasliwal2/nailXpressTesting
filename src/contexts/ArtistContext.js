@@ -39,7 +39,7 @@ export const useArtists = () => {
 };
 
 export const ArtistProvider = ({ children }) => {
-  const [artists, setArtists] = useState([]);
+  const [allArtists, setAllArtists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     location: '',
@@ -87,7 +87,7 @@ export const ArtistProvider = ({ children }) => {
         return dateB - dateA;
       });
       
-      setArtists(sortedArtists);
+      setAllArtists(sortedArtists);
     } catch (error) {
       console.error('Error fetching artists:', error);
     } finally {
@@ -96,7 +96,7 @@ export const ArtistProvider = ({ children }) => {
   };
 
   // Filter artists based on current filters
-  const filteredArtists = artists.filter(artist => {
+  const filteredArtists = allArtists.filter(artist => {
     const matchesLocation = !filters.location || (() => {
       const locationTerms = expandSearchTerms(filters.location);
       
@@ -239,7 +239,7 @@ export const ArtistProvider = ({ children }) => {
 
   const value = {
     artists: filteredArtists,
-    allArtists: artists,
+    allArtists,
     loading,
     filters,
     updateFilters,

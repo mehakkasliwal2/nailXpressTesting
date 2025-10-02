@@ -81,7 +81,7 @@ const ArtistProfileSetup = () => {
     },
     portfolio: [],
     profileImage: '',
-    profileBackgroundColor: 'bg-pink-100', // Default to Soft Pink
+    profileBackgroundColor: 'bg-white', // Default to White
     isActive: false
   });
   const [loading, setLoading] = useState(false);
@@ -408,29 +408,10 @@ const ArtistProfileSetup = () => {
             Complete Your Artist Profile
           </h1>
           <p className="text-gray-600">
-            Step {currentStep} of 5: {getStepTitle(currentStep)}
+            Step {currentStep}: {getStepTitle(currentStep)}
           </p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            {[1, 2, 3, 4, 5].map((step) => (
-              <div key={step} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                  step <= currentStep ? 'bg-pink-600 text-white' : 'bg-gray-300 text-gray-600'
-                }`}>
-                  {step}
-                </div>
-                {step < 5 && (
-                  <div className={`w-16 h-1 mx-2 ${
-                    step < currentStep ? 'bg-pink-600' : 'bg-gray-300'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* Step Content */}
         <div className="bg-white rounded-lg shadow-lg p-8">

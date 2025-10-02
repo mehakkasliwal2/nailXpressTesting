@@ -14,6 +14,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import AboutUs from './pages/AboutUs';
 import Favorites from './pages/Favorites';
+import Locations from './pages/Locations';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/about" element={<AboutUs />} />
+                <Route path="/locations" element={<Locations />} />
                 <Route
                   path="/favorites"
                   element={
